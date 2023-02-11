@@ -8,7 +8,6 @@ Xposed Module to Force Google Photos to separate each folder like Snapchat, Scre
 
 > [![APK: v1.0](https://img.shields.io/badge/APK-v2.0.0-brightgreen)](https://github.com/RevealedSoulEven/XposedPhotosFIX/releases/download/2.0.0/Xposed-Disable-FLAG_SECURE_2.0.0.apk)
 ![Download-Count](https://img.shields.io/github/downloads/RevealedSoulEven/XposedPhotosFIX/total?color=blue)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Requirements:
 
