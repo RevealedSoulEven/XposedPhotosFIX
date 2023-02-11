@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Photos FIX</string>
+    <string name="xposed_description">Disables MIUI 10s AOD Limit Timer.</string>
+    <string-array name="scope">
+        <item>com.google.android.apps.photos</item>
+    </string-array>
+</resources>
