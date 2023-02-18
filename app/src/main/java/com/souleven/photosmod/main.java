@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import java.lang.reflect.Modifier;
+import java.util.Locale;
+
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
@@ -43,15 +45,14 @@ public class main implements IXposedHookLoadPackage {
             XposedBridge.hookMethod(result.loadMethod(loadPackageParam.classLoader), new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    param.setResult(false);
+                    Boolean returnval = (Boolean) param.getResult();
+                    if(returnval==true){
+                        if(!param.args[0].toString().toLowerCase(Locale.US).contains("/dcim/camera/")){
+                            param.setResult(false);
+                        }
+                    }
                 }
             });
-
-
-
-
         }
-
     }
-
 }
