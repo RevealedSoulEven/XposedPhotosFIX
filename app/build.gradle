@@ -3,7 +3,6 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "30.0.2"
 
     defaultConfig {
         applicationId 'com.souleven.photosfix'
@@ -14,13 +13,7 @@ android {
         resConfigs "en"
     }
 
-    buildTypes {
-        release {
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles 'proguard-rules.pro'
-        }
-    }
+
 
     packagingOptions {
         exclude "/META-INF/*.kotlin_module"
