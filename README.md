@@ -6,7 +6,7 @@ Xposed Module to Force Google Photos to separate each folder like Snapchat, Scre
 
 ## [Downloads](https://github.com/RevealedSoulEven/XposedPhotosFIX/releases/)
 
-> [![APK: v2.0](https://img.shields.io/badge/APK-v2.0-brightgreen)](https://github.com/RevealedSoulEven/XposedPhotosFIX/releases/download/2.0/app-debug.apk)
+> [![APK: v2.0](https://img.shields.io/badge/APK-v2.0-brightgreen)](https://github.com/RevealedSoulEven/XposedPhotosFIX/releases/download/2.0/app-release.apk)
 
 ## Requirements:
 
@@ -27,7 +27,6 @@ Xposed Module to Force Google Photos to separate each folder like Snapchat, Scre
 
 - SoulEven : for my lazy brain (aka Ayush Maurya)
 - My School : for giving me boring lectures so I got enough time to make this
-- [VarunS2002](https://github.com/VarunS2002/) : for this readme and basic Xposed Hook template
 - [LSPosed](https://github.com/LSPosed/LSPosed/) : for nothing hehe
 - My PC : for not responding the entire time
 - Google : for making such a useless Photos app that required me to separate the folders
