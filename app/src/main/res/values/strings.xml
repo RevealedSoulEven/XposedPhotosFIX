@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Photos FIX</string>
-    <string name="xposed_description">Disables MIUI 10s AOD Limit Timer.</string>
+    <string name="xposed_description">Separates Camera folder in Google Photos for Auto-Backup to be better.</string>
     <string-array name="scope">
         <item>com.google.android.apps.photos</item>
     </string-array>
