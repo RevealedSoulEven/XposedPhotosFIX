@@ -46,6 +46,7 @@ public class main implements IXposedHookLoadPackage {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     Boolean returnval = (Boolean) param.getResult();
+                    // Main Logic
                     if(returnval==true){
                         if(!param.args[0].toString().toLowerCase(Locale.US).contains("/dcim/camera/")){
                             param.setResult(false);
