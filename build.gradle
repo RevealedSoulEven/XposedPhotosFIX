@@ -14,11 +14,6 @@ buildscript {
     }
 }
 
-buildTypes {
-   release {
-       signingConfig signingConfigs.release
-   }
-}
 
 allprojects {
     repositories {
