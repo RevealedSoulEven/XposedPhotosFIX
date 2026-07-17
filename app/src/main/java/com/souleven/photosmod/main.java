@@ -1,59 +1,44 @@
 package com.souleven.photosmod;
-import android.app.AndroidAppHelper;
-import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
-import java.lang.reflect.Modifier;
-import java.util.Locale;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
-import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
-import io.github.neonorbit.dexplore.DexFactory;
-import io.github.neonorbit.dexplore.Dexplore;
-import io.github.neonorbit.dexplore.filter.*;
-import io.github.neonorbit.dexplore.result.*;
-
-
-
-// Original Developer : Revealed SoulEven (a.k.a SoulEven)
-// Github : https://github.com/RevealedSoulEven
+import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class main implements IXposedHookLoadPackage {
 
-
-    String TAG = "ayush";
     @Override
-    public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loadPackageParam) {
+    public void handleLoadPackage(LoadPackageParam lpparam) {
+        if (!lpparam.packageName.equals("com.google.android.apps.photos")) {
+            return;
+        }
 
-        if (loadPackageParam.packageName.equals("com.google.android.apps.photos")) {
+        XposedBridge.log("Google Photos initialization sequence caught.");
 
-            ClassFilter classFilter = new ClassFilter.Builder()
-                    .setReferenceTypes(ReferenceTypes.builder().addString().build())
-                    .setReferenceFilter(pool ->
-                            pool.stringsContain("/dcim/")
-                    ).build();
+        long appVersion = CacheManager.getAppVersion(lpparam);
+        if (appVersion == 0L) {
+            XposedBridge.log("Unable to verify targeted variant versions. Terminating.");
+            return;
+        }
 
-            MethodFilter methodFilter = new MethodFilter.Builder()
-                    .setReferenceTypes(ReferenceTypes.builder().addString().build())
-                    .setReferenceFilter(pool ->
-                            pool.stringsContain("/dcim/")
-                    ).build();
-            Dexplore dexplore = DexFactory.load(loadPackageParam.appInfo.sourceDir);
-            MethodData result = dexplore.findMethod(DexFilter.MATCH_ALL, classFilter, methodFilter);
-            XposedBridge.hookMethod(result.loadMethod(loadPackageParam.classLoader), new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    Boolean returnval = (Boolean) param.getResult();
-                    // Main Logic
-                    if(returnval==true){
-                        if(!param.args[0].toString().toLowerCase(Locale.US).contains("/dcim/camera/")){
-                            param.setResult(false);
-                        }
-                    }
+        try {
+            CacheManager.Cache cache = CacheManager.loadCache();
+
+            if (cache != null && cache.appVersion == appVersion && cache.moduleVersion == CacheManager.MODULE_VERSION) {
+                XposedBridge.log("Valid operational cache discovered. Resolving intercept definitions...");
+                CacheManager.executeHook(cache.builderClassName, cache.setterMethodName, cache.filepathFieldName, lpparam);
+                if (cache.legacyClassName != null && cache.legacyMethodName != null) {
+                    CacheManager.executeLegacyHook(cache.legacyClassName, cache.legacyMethodName, lpparam);
                 }
-            });
+                XposedBridge.log("Cache configurations loaded successfully.");
+                return;
+            }
+
+            XposedBridge.log("Cache configurations missing or mismatched. Launching dynamic bytecode extraction engine...");
+            CacheManager.scanAndHook(lpparam, appVersion);
+            XposedBridge.log("Bytecode processing sequence fully finished.");
+
+        } catch (Throwable t) {
+            XposedBridge.log("Critical validation anomaly inside container execution layer: " + t.getMessage());
         }
     }
 }
