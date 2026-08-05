@@ -27,7 +27,7 @@ import java.util.Locale;
 public class CacheManager {
 
     private static final String CACHE_PATH = "/data/data/com.google.android.apps.photos/files/photosmod.cache";
-    public static final int MODULE_VERSION = 3;
+    public static final int MODULE_VERSION = 4;
 
     public static class Cache {
         public long appVersion;
@@ -127,18 +127,30 @@ public class CacheManager {
             XposedBridge.log("DexKit engine processing anomaly: " + t.getMessage());
         }
 
-        if (builderClassName != null && setterMethodName != null) {
-            executeHook(builderClassName, setterMethodName, filepathFieldName, lpparam);
+        boolean hasStructural = (builderClassName != null && setterMethodName != null);
+        boolean hasLegacy = (legacyClassName != null && legacyMethodName != null);
 
-            if (legacyClassName != null && legacyMethodName != null) {
-                executeLegacyHook(legacyClassName, legacyMethodName, lpparam);
-            }
-
-            Cache newCache = new Cache(appVersion, MODULE_VERSION, builderClassName, setterMethodName, filepathFieldName, legacyClassName, legacyMethodName);
-            saveCache(newCache);
-        } else {
-            XposedBridge.log("Failure: Core tracking compilation vectors did not resolve cleanly.");
+        if (!hasStructural && !hasLegacy) {
+            XposedBridge.log("Failure: Neither structural nor legacy methods were found. Module cannot operate on this build.");
+            XposedBridge.log("Please create an issue at: https://github.com/RevealedSoulEven/XposedPhotosFIX/issues");
+            return;
         }
+
+        if (hasStructural) {
+            executeHook(builderClassName, setterMethodName, filepathFieldName, lpparam);
+        } else {
+            XposedBridge.log("Structural builder method not found in this build. Continuing with legacy method only.");
+            XposedBridge.log("If folders are not separating after clearing Google Photos data, please create an issue at: https://github.com/RevealedSoulEven/XposedPhotosFIX/issues");
+        }
+
+        if (hasLegacy) {
+            executeLegacyHook(legacyClassName, legacyMethodName, lpparam);
+        } else {
+            XposedBridge.log("Legacy boolean method not found in this build. Continuing with structural method only.");
+        }
+
+        Cache newCache = new Cache(appVersion, MODULE_VERSION, builderClassName, setterMethodName, filepathFieldName, legacyClassName, legacyMethodName);
+        saveCache(newCache);
     }
 
     public static void executeLegacyHook(String className, String methodName, LoadPackageParam lpparam) {
@@ -244,8 +256,8 @@ public class CacheManager {
             return new Cache(
                     json.getLong("appVersion"),
                     json.getInt("moduleVersion"),
-                    json.getString("builderClassName"),
-                    json.getString("setterMethodName"),
+                    json.optString("builderClassName", null),
+                    json.optString("setterMethodName", null),
                     json.optString("filepathFieldName", null),
                     json.optString("legacyClassName", null),
                     json.optString("legacyMethodName", null)
@@ -266,9 +278,11 @@ public class CacheManager {
             JSONObject json = new JSONObject();
             json.put("appVersion", cache.appVersion);
             json.put("moduleVersion", cache.moduleVersion);
-            json.put("builderClassName", cache.builderClassName);
-            json.put("setterMethodName", cache.setterMethodName);
-            json.put("filepathFieldName", cache.filepathFieldName);
+            if (cache.builderClassName != null) {
+                json.put("builderClassName", cache.builderClassName);
+                json.put("setterMethodName", cache.setterMethodName);
+                json.put("filepathFieldName", cache.filepathFieldName);
+            }
             if (cache.legacyClassName != null) {
                 json.put("legacyClassName", cache.legacyClassName);
                 json.put("legacyMethodName", cache.legacyMethodName);
