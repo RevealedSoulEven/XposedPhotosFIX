@@ -1,18 +1,17 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
     namespace 'com.souleven.photosmod'
 
-    compileSdk 30
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.souleven.photosfix'
         minSdk 26
-        targetSdk 34
-        versionCode 3
-        versionName '3.0'
-        resConfigs "en"
+        targetSdk 36
+        versionCode 4
+        versionName '4.0'
+        resourceConfigurations += ["en"]
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
@@ -21,9 +20,11 @@ android {
 
 
 
-    packagingOptions {
-        exclude "/META-INF/*.kotlin_module"
-        exclude "**/kotlin/**"
+    packaging {
+        resources {
+            excludes += "/META-INF/*.kotlin_module"
+            excludes += "**/kotlin/**"
+        }
     }
 }
 
