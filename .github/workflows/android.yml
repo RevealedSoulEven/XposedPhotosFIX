@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -40,6 +40,13 @@ jobs:
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found APK at: $APK_PATH"
 
+      # Upload APK to GitHub Actions tab so users/devs can download it directly from workflow runs
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: XposedPhotosFIX-v${{ github.event.inputs.version_name }}-debug
+          path: ${{ steps.locate_apk.outputs.apk_path }}
+
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -47,6 +54,10 @@ jobs:
           files: ${{ steps.locate_apk.outputs.apk_path }}
           name: Release v${{ github.event.inputs.version_name }}
           tag_name: v${{ github.event.inputs.version_name }}
+          body: |
+            > [!NOTE]
+            > **Verified Build:** This release binary was compiled directly by GitHub Actions.
+            > 🔍 [View Workflow Run & Verification Log](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           draft: false
           prerelease: false
           generate_release_notes: true
