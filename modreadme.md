@@ -15,21 +15,20 @@ To fix this, the module hooks the system to intercept the camera folder checks a
 
 ---
 
-## 2. The Original Approach (Legacy boolean Method)
-Historically (and for over 5 years!), the hook worked by intercepting a very simple, centralized boolean method that Google Photos used to verify if a path was a camera path.
+## 2. The Legacy Approach (boolean Method)
+For over 5 years, Google Photos used a simple, centralized boolean method to verify if a path was a camera path.
 
 This legacy method:
 - Returned a `boolean`
 - Took a single `String` argument (the file path)
 - Contained the string literal `"/dcim/"`
 
-### Why we shifted:
-While this method still exists in the codebase (and we still hook it as a fallback!), it is no longer the primary method called by Google Photos on newer versions for modern media insertion. Google shifted the core logic into complex builder classes, making the legacy hook ineffective on its own for newer updates.
+This was the only method the module hooked for years, and it worked flawlessly.
 
 ---
 
-## 3. The Current Approach (Structural Caller Matching)
-To make the module resilient against cloned classes and obfuscation, we completely shifted from pure string matching to **Structural Caller Matching** using DexKit. We now identify the target class and method by analyzing *how the classes interact with each other in the bytecode*.
+## 3. The Structural Approach (Caller Matching via DexKit)
+In mid-2026, Google shifted the core logic into complex builder classes, making the legacy hook ineffective on its own. The module was updated (v3.0) to use **Structural Caller Matching** via DexKit to find and hook the new builder method.
 
 ### Step A: Finding the "Inserter Class"
 Instead of looking directly for the Builder Class, we first look for the massive class responsible for scanning and inserting local media into the database. 
@@ -53,9 +52,36 @@ Even if DexKit fails to find the exact file path variable name, the hook contain
 
 ---
 
-## 4. How to Fix Manually in the Future
+## 4. The Google Switcheroo (August 2026)
+Just **2 weeks** after v3.0 was released with the structural approach, Google removed the builder class/setter method from a newer version of Google Photos, reverting back to the legacy boolean method. This broke the module because v3.0 treated the structural method as **required** — if it wasn't found, the module would log a failure and not activate any hooks at all, even though the legacy method was still successfully discovered.
+
+### What happened:
+- v3.0 shipped with structural hooking as the primary method.
+- Google Photos updated and removed the structural builder classes entirely.
+- The DexKit scan found the legacy method but not the structural one.
+- The module hit the failure branch and did nothing. No hooks were applied.
+
+### The fix (current approach — Graceful Degradation):
+The module now treats both methods as **independently optional**. It will activate whichever methods it finds:
+
+| Structural Found | Legacy Found | Result |
+|:---:|:---:|:---|
+| ✅ | ✅ | Both hooks active (strongest coverage) |
+| ✅ | ❌ | Structural hook only + log |
+| ❌ | ✅ | Legacy hook only + log |
+| ❌ | ❌ | Failure — logs a message asking to create a GitHub issue |
+
+The caching system was also updated to support legacy-only caches. Previously, the cache required `builderClassName` and `setterMethodName` to be present — a legacy-only cache would crash on load. Now all fields are optional.
+
+### Current status:
+As of August 2026, the legacy method is working again on the latest Google Photos build. It's unclear if Google will bring the structural method back in future builds — this could be build-specific. The module is now prepared for either scenario, so let's wait and see what happens.
+
+---
+
+## 5. How to Fix Manually in the Future
 If the module stops working, follow these steps to manually update the tracking logic:
 
-1. **If the Builder Class isn't found**: Google may have changed the string `"LocalMediaInsert"`. Decompile the APK and search for `"/dcim/"` to find the Inserter Class. Check what new unique strings it contains and update the DexKit query.
-2. **If the Hook attaches to the wrong method**: Google may have changed the bitmask index from `32`. Decompile the APK, find the Builder Class, look at the validation method that builds the `" inCameraFolder"` string, and check what bitwise AND operation (e.g., `& 32`, `& 64`) it uses. Update the `.usingNumbers()` query accordingly.
+1. **If neither method is found**: Google may have changed the string `"LocalMediaInsert"` or moved away from `"/dcim/"` entirely. Decompile the APK and search for camera folder detection logic. Check what new unique strings are used and update the DexKit queries.
+2. **If the structural hook attaches to the wrong method**: Google may have changed the bitmask index from `32`. Decompile the APK, find the Builder Class, look at the validation method that builds the `" inCameraFolder"` string, and check what bitwise AND operation (e.g., `& 32`, `& 64`) it uses. Update the `.usingNumbers()` query accordingly.
 3. **If the File Path is not found**: The fallback mechanism should catch it. However, if the fallback fails, decompile the Builder Class and search for `"Null filepath"` to manually find the new variable name or structure.
+4. **If only legacy is active but folders aren't separating**: The legacy method might not be the primary check anymore. Google may have introduced a completely new approach. Decompile and investigate the media scanning flow from scratch.
